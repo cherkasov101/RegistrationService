@@ -8,10 +8,8 @@ class RegisterHandler {
     private $db;
 
     public function __construct() {
-        // Подключение к базе данных SQLite в папке db
         $db_path = __DIR__ . '/../db/users.db';
         $this->db = new SQLite3($db_path);
-        // Создание таблицы, если она не существует
         $this->createTable();
     }
 
@@ -40,14 +38,12 @@ class RegisterHandler {
         $email = $request_body['email'];
         $password = $request_body['password'];
 
-        // Проверка, что email валидный
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             http_response_code(400);
             echo 'Invalid email format';
             exit;
         }
 
-        // Проверка, что пользователя с таким email еще нет в базе
         $stmt = $this->db->prepare('SELECT * FROM users WHERE email = :email');
         $stmt->bindValue(':email', $email, SQLITE3_TEXT);
         $result = $stmt->execute();
@@ -59,7 +55,6 @@ class RegisterHandler {
         }
         $answer = 'perfect';
 
-        // Проверка надежности пароля
         if (strlen($password) < 8) {
             http_response_code(400);
             throw new WeakPasswordException();
@@ -67,10 +62,8 @@ class RegisterHandler {
             $answer = 'good';
         }
 
-        // Хеширование пароля
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Вставка данных в таблицу
         $stmt = $this->db->prepare('INSERT INTO users (email, password) VALUES (:email, :password)');
         $stmt->bindValue(':email', $email, SQLITE3_TEXT);
         $stmt->bindValue(':password', $hashed_password, SQLITE3_TEXT);
@@ -80,7 +73,7 @@ class RegisterHandler {
             $user_id = $this->db->lastInsertRowID();
             $response = [
                 'user_id' => $user_id,
-                'password_check_status' => $answer // или 'perfect' в зависимости от требований
+                'password_check_status' => $answer 
             ];
             http_response_code(201);
         } else {
